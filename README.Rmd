@@ -16,6 +16,7 @@ knitr::opts_chunk$set(
 [![Windows Build status](https://ci.appveyor.com/api/projects/status/github/r-hub/builddeps?svg=true)](https://ci.appveyor.com/project/gaborcsardi/builddeps)
 [![](http://www.r-pkg.org/badges/version/builddeps)](http://www.r-pkg.org/pkg/builddeps)
 [![CRAN RStudio mirror downloads](http://cranlogs.r-pkg.org/badges/builddeps)](http://www.r-pkg.org/pkg/builddeps)
+[![Coverage Status](https://img.shields.io/codecov/c/github/r-hub/builddeps/master.svg)](https://codecov.io/github/r-hub/builddeps?branch=master)
 
 Most R package dependencies are run-time dependencies: functions within a
 package refer to functions or other objects within another package. These
