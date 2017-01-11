@@ -14,4 +14,18 @@ needed. This package tries to work out the build-time and run-time
 dependencies of a package, by trying to evaluate the package code both
 without and with each dependency.
 }
-
+\details{
+The current algorithms is this:
+\itemize{
+\item If a dependency is linked to (i.e. its type is \code{LinkingTo}), this is
+a build-time dependency, and we install it.
+\item We try to evaluate the package code with only the \code{LinkingTo}
+dependencies available. This should already run without errors for most
+packages, and if it indeed does, then there are no additional
+dependencies.
+\item Otherwise we install all dependencies first, and then employ a
+"leave one out" strategy for the non \code{LinkingTo} packages: for each
+imported or depended package, we omit this single package and try to
+evaluate the package code.
+}
+}
