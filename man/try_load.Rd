@@ -4,7 +4,7 @@
 \alias{try_load}
 \title{Try loading a package from a directory}
 \usage{
-try_load(path, libpath)
+try_load(path, libpath, pkg)
 }
 \arguments{
 \item{path}{Path to the package directory.}

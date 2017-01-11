@@ -20,9 +20,8 @@ Imports:
     callr,
     debugme,
     desc,
-    pkgload,
-    remotes,
-    rprojroot
+    rprojroot,
+    utils
 Suggests: 
     testthat
 Remotes:
