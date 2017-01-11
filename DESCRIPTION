@@ -24,6 +24,4 @@ Imports:
     utils
 Suggests: 
     testthat
-Remotes:
-    r-pkgs/pkgload
 Encoding: UTF-8
