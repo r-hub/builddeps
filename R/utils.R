@@ -1,4 +1,6 @@
 
+#' @importFrom utils installed.packages
+
 base_packages <- function() {
   unname(installed.packages(priority="base")[, "Package"])
 }

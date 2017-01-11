@@ -21,10 +21,10 @@
 #'   imported or depended package, we omit this single package and try to
 #'   evaluate the package code.
 #'
-#' @docType package
-#' @name builddeps
-NULL
-
+#' @param path Path to the package root.
+#' @return Character vector, the names of the packages that are
+#'   build dependencies.
+#'
 #' @importFrom rprojroot find_package_root_file
 #' @importFrom desc desc_get_deps desc_get
 #' @importFrom utils install.packages

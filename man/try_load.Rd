@@ -19,3 +19,4 @@ successful or not.
 It tries the loading in another R session.
 }
 \keyword{internal}
+
