@@ -1,6 +1,6 @@
 Package: builddeps
 Title: Find Build-Time Package Dependencies
-Version: 0.0.0.9000
+Version: 1.0.0
 Author: Gábor Csárdi
 Maintainer: Gábor Csárdi <csardi.gabor@gmail.com>
 Description: Most R package dependencies are run-time dependencies:
