@@ -25,14 +25,28 @@ try_load <- function(path, libpath, pkg) {
     )
   }
 
+  outfile <- tempfile()
+  errfile <- tempfile()
+
   res <- tryCatch(
     r_vanilla(
       fun,
       libpath = libpath,
       repos = getOption("repos"),
-      args = list(path = path, pkg = pkg)
+      args = list(path = path, pkg = pkg),
+      stdout = outfile,
+      stderr = errfile
     ),
-    error = function(e) "failed"
+    error = function(e) {
+      "!DEBUG - ERROR --------\n"
+      "!DEBUG `e$message`"
+      "!DEBUG - STDOUT -------\n"
+      "!DEBUG `paste(readLines(outfile), collapse = '\n')`"
+      "!DEBUG - STDERR -------\n"
+      "!DEBUG `paste(readLines(errfile), collapse = '\n')`"
+      "!DEBUG ----------------\n"
+      "failed"
+    }
   )
 
   ! identical(res, "failed")

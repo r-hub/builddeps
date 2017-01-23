@@ -37,7 +37,7 @@ build_deps <- function(path = ".") {
   "!DEBUG package: `package_name`"
 
   ## Create a copy of the whole package, because we'll modify the
-  ## DESCRIPTION file to load code with pkgload
+  ## DESCRIPTION file to install the package
   dir.create(tmp <- tempfile())
   on.exit(unlink(tmp, recursive = TRUE))
   "!DEBUG making a copy in '`tmp`'"
