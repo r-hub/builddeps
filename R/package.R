@@ -10,16 +10,36 @@
 #' without and with each dependency.
 #'
 #' The current algorithms is this:
-#' * If a dependency is linked to (i.e. its type is `LinkingTo`), this is
-#'   a build-time dependency, and we install it.
-#' * We try to evaluate the package code with only the `LinkingTo`
-#'   dependencies available. This should already run without errors for most
-#'   packages, and if it indeed does, then there are no additional
-#'   dependencies.
-#' * Otherwise we install all dependencies first, and then employ a
-#'   "leave one out" strategy for the non `LinkingTo` packages: for each
-#'   imported or depended package, we omit this single package and try to
-#'   evaluate the package code.
+#' 1. If a dependency is linked to (i.e. its type is `LinkingTo`), this is
+#'    a build-time dependency, and we install it.
+#' 2. We try to evaluate the package code with only the `LinkingTo`
+#'    dependencies available. This should already run without errors for
+#'    most packages, and if it indeed does, then there are no additional
+#'    build dependencies.
+#' 3. Otherwise we install all dependencies and check that the package
+#'    installs with them. If it does not then it is not possible to work
+#'    out the build dependencies, so we give up here.
+#' 4. Otherwise, we *try* the dependencies one by one. We remove it, and
+#'    try to install the package without it. If it installs, then it is not
+#'    a build dependency. If it does not install, then it is a build
+#'    dependency.
+#'
+#' It is important that in step 4., the packages are considered in an
+#' appropriate order. E.g. if `pkg -> A -> B` and also `pkg -> B` holds,
+#' then we cannot try to omit package `B` first, because even if it is not
+#' a build dependency, it is needed for package `A`, so the installation
+#' of `pkg` will fail. So we create the dependency graph of all recursive
+#' dependencies of the package, and try omitting the (directly dependent)
+#' packages according to the topological ordering.
+#'
+#' E.g. for the example above, we test package `A` first. (Assuming there
+#' are no other direct dependencies depending on `A`, directly or
+#' indirectly.)
+#' * If `A` is a build dependency, then we always keep it installed in the
+#'   following package tests.
+#' * If `A` is not a build dependency, then we can remove it from the
+#'   testing procedure for good, as no other packages in the dependency
+#'   tree depend on it directly or indirectly.
 #'
 #' @param path Path to the package root.
 #' @return Character vector, the names of the packages that are
@@ -44,18 +64,9 @@ build_deps <- function(path = ".") {
   file.copy(path, tmp, recursive = TRUE)
   pkgdir <- file.path(tmp, basename(path))
 
-  ## All dependencies
-  deps <- desc_get_deps(pkgdir)
-
-  ## Drop base packages
-  deps <- deps[ ! deps$package %in% base_packages(), ]
-
-  ## LinkingTo is special, we don't need Suggests and Enhances,
-  ## and can also drop Imports for LinkingTo
-  deps <- deps[ deps$type != "Suggests", ]
-  deps <- deps[ deps$type != "Enhances", ]
-  linkingto <- deps[ deps$type == "LinkingTo", ]
-  deps <- deps[ ! deps$package %in% linkingto$package, ]
+  ## All dependencies, and linkingto separately
+  deps <- get_hard_dependencies(pkgdir)
+  linkingto <- get_linkingto_dependencies(pkgdir)
 
   ## Use a temporary package library for the dependencies
   dir.create(libdir <- tempfile())
@@ -65,23 +76,30 @@ build_deps <- function(path = ".") {
   .libPaths(libdir)
 
   ## Install LinkingTo packages
-  "!DEBUG install LinkingTo packages: `collapse(linkingto$package)`"
-  if (length(linkingto$package)) install.packages(linkingto$package)
+  "!DEBUG install LinkingTo packages: `collapse(linkingto)`"
+  if (length(linkingto)) install.packages(linkingto)
 
-  ## Build dependencies found so far
-  builddeps <- linkingto$package
+  ## This is what we know at the start
+  positive <- linkingto
+  negative <- character()
+  unknown <- setdiff(deps, positive)
 
-  ## Try to load the package, in another session
+  ## Try to load the package, in another session, with LinkingTo only
   "!DEBUG try loading with LinkingTo only"
-  if (try_load(pkgdir, libpath = .libPaths(), package_name)) {
+  if (try_load_without(
+      pkgdir,
+      libpath = .libPaths(),
+      pkg = package_name,
+      without = unknown)) {
     "!DEBUG loaded successfully"
-    return(builddeps)
+    return(positive)
   }
   "!DEBUG loading failed"
 
   ## If failed, then install all dependencies
-  "!DEBUG install all dependencies: `collapse(deps$package)`"
-  install.packages(deps$package)
+  "!DEBUG install all dependencies: `collapse(deps)`"
+  dir.create(cache_dir <- tempfile())
+  install.packages(deps, destdir = cache_dir)
 
   ## Try to load now, this should succeed
   "!DEBUG try to load with all dependencies installed"
@@ -89,14 +107,30 @@ build_deps <- function(path = ".") {
     stop("Cannot install package from ", sQuote(path))
   }
 
-  ## Now try removing dependencies one by one, and see if it loads
-  for (out in deps$package) {
-    "!DEBUG try to load without `out`"
-    if (!try_load_without(pkgdir, libpath = .libPaths(), package_name, out)) {
-      "!DEBUG FAILED, `out` is a build dependency!"
-      builddeps <- c(builddeps, out)
+  ## We need to query all dependencies of the downloaded packages,
+  ## and consider them in topological order.
+  pkg_files <- list.files(cache_dir, full.names = TRUE)
+  names(pkg_files) <- sub("_.*$", "", basename(pkg_files))
+
+  depgraph <- make_depgraph(pkg_files)
+  depgraph <- del_pkg_from_depgraph(depgraph, positive)
+
+  while (length(unknown)) {
+    candidate <- next_pkg_from_depgraph(depgraph)
+    if (candidate %in% unknown) {
+      "!DEBUG try to load without `candidate`"
+      if (!try_load_without(pkgdir, libpath = .libPaths(), package_name,
+                            c(negative, candidate))) {
+        "!DEBUG FAILED, `candidate` is a build dependency!"
+        positive<- c(positive, candidate)
+      } else {
+        "!DEBUG SUCCESS, `candidate` is NOT a build dependency!"
+        negative <- c(negative, candidate)
+      }
     }
+    unknown <- setdiff(unknown, candidate)
+    depgraph <- del_pkg_from_depgraph(depgraph, candidate)
   }
 
-  builddeps
+  positive
 }

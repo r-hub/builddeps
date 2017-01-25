@@ -1,0 +1,31 @@
+
+import(foo)
+import(foo, bar)
+import(foo, except=c(bar, baz))
+importFrom(foo2, bar, ">")
+
+export(g, h, ">")
+exportPattern("^[^\\.]")
+exportPattern("pat", "tern")
+
+importClassesFrom(foo, c1, x)
+importClassesFrom(foo2, c2)
+importMethodsFrom(foo, f1, x)
+importMethodsFrom(foo2, f2)
+
+exportMethods("[")
+exportMethods(f6, "[")
+exportClasses(c1)
+exportClasses(c1, c2)
+
+exportClassPattern("xxx", "^[^\\.]")
+exportClassPattern("yyy", "zzz")
+
+useDynLib(foo)
+useDynLib(foo2, myRoutine, myOtherRoutine)
+useDynLib(foo3, myRoutine_sym = myRoutine, myOtherRoutine)
+useDynLib(myDLL, .registration = TRUE)
+useDynLib(KernSmooth, .registration = TRUE, .fixes = "F_")
+
+S3method(print, foo)
+S3method(print, check_so_symbols, .print.via.format)

@@ -24,17 +24,38 @@ without and with each dependency.
 }
 \details{
 The current algorithms is this:
-\itemize{
+\enumerate{
 \item If a dependency is linked to (i.e. its type is \code{LinkingTo}), this is
 a build-time dependency, and we install it.
 \item We try to evaluate the package code with only the \code{LinkingTo}
-dependencies available. This should already run without errors for most
-packages, and if it indeed does, then there are no additional
-dependencies.
-\item Otherwise we install all dependencies first, and then employ a
-"leave one out" strategy for the non \code{LinkingTo} packages: for each
-imported or depended package, we omit this single package and try to
-evaluate the package code.
-}
+dependencies available. This should already run without errors for
+most packages, and if it indeed does, then there are no additional
+build dependencies.
+\item Otherwise we install all dependencies and check that the package
+installs with them. If it does not then it is not possible to work
+out the build dependencies, so we give up here.
+\item Otherwise, we \emph{try} the dependencies one by one. We remove it, and
+try to install the package without it. If it installs, then it is not
+a build dependency. If it does not install, then it is a build
+dependency.
 }
 
+It is important that in step 4., the packages are considered in an
+appropriate order. E.g. if \code{pkg -> A -> B} and also \code{pkg -> B} holds,
+then we cannot try to omit package \code{B} first, because even if it is not
+a build dependency, it is needed for package \code{A}, so the installation
+of \code{pkg} will fail. So we create the dependency graph of all recursive
+dependencies of the package, and try omitting the (directly dependent)
+packages according to the topological ordering.
+
+E.g. for the example above, we test package \code{A} first. (Assuming there
+are no other direct dependencies depending on \code{A}, directly or
+indirectly.)
+\itemize{
+\item If \code{A} is a build dependency, then we always keep it installed in the
+following package tests.
+\item If \code{A} is not a build dependency, then we can remove it from the
+testing procedure for good, as no other packages in the dependency
+tree depend on it directly or indirectly.
+}
+}

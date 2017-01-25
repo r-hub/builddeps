@@ -25,8 +25,9 @@ try_load <- function(path, libpath, pkg) {
     )
   }
 
-  outfile <- tempfile()
-  errfile <- tempfile()
+  ## Make sure that the files exist
+  cat("", file = outfile <- tempfile())
+  cat("", file = errfile <- tempfile())
 
   res <- tryCatch(
     r_vanilla(
@@ -56,22 +57,36 @@ try_load <- function(path, libpath, pkg) {
 
 try_load_without <- function(path, libpath, pkg, without) {
 
-  ## This is to restore the original state
+  ## Easy case
+  if (!length(without)) return(try_load(path, libpath, pkg))
+
+  ## Temporary DESCRIPTION, without the `without` package
   desc <- description$new(path)
   on.exit(desc$write(), add = TRUE)
-
-  ## This is the temporary DESCRIPTION, without 'without'
   desctmp <- description$new(path)
-  desctmp$del_dep(without)$write()
+  for (p in without) desctmp$del_dep(p)
+  desctmp$write()
 
-  ## We also need to remove the package from the package library,
-  ## temporaily, because the references to it might use :: or :::
+  ## Temporary NAMESPACE, without the `without` package
+  file.copy(ns_file <- file.path(path, "NAMESPACE"), ns_tmp <- tempfile())
+  on.exit(file.copy(ns_tmp, ns_file, overwrite = TRUE), add = TRUE)
+  ns <- parseNamespaceFile(
+    basename(dirname(ns_file)),
+    dirname(dirname(ns_file))
+  )
+  write_namespace(filter_namespace(ns, without), ns_file)
+
+  ## We also need to remove the packages from the package library,
+  ## temporaily, because the references to them might use :: or :::
   ## Instead of removing it, we just rename it. This works, unless
   ## the R process crashes, in which case whole process is done, anyway.
   pkgdir <- file.path(libpath[1], without)
-  pkgdir_copy <- file.path(libpath[1], random_name())
-  on.exit(file.rename(pkgdir_copy, pkgdir), add = TRUE)
-  file.rename(pkgdir, pkgdir_copy)
+  pkgdir_copy <- file.path(
+    libpath[1],
+    replicate(length(without), random_name())
+  )
+  on.exit(file_rename_ex(pkgdir_copy, pkgdir), add = TRUE)
+  file_rename_ex(pkgdir, pkgdir_copy)
 
   try_load(path, libpath, pkg)
 }

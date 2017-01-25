@@ -15,3 +15,12 @@ random_name <- function() {
 collapse <- function(x) {
   paste(x, collapse = ", ")
 }
+
+file_rename_ex <- function(from, to) {
+  ex <- file.exists(from)
+  if (any(ex)) file.rename(from[ex], to[ex])
+}
+
+drop_names <- function(list, drop) {
+  list[! names(list) %in% drop]
+}

@@ -9,10 +9,11 @@ Description: Most R package dependencies are run-time dependencies:
     evaluating the code of a package (i.e. installing it), the dependencies
     are not actually needed. This package tries to work out the build-time
     and run-time dependencies of a package, by trying to evaluate the
-    package code both without and with each dependency.
+    package code both without and with each dependency. See the manual for
+    the exact details of the detection algorithm.
 License: MIT + file LICENSE
 LazyData: true
-URL: https://github.com/r-hub/builddeps
+URL: https://github.com/r-hub/builddeps#readme
 BugReports: https://github.com/r-hub/builddeps/issues
 RoxygenNote: 5.0.1.9000
 Roxygen: list(markdown = TRUE)
@@ -24,4 +25,5 @@ Imports:
     utils
 Suggests: 
     testthat
+Remotes: r-pkgs/desc
 Encoding: UTF-8
