@@ -10,6 +10,7 @@
 #' without and with each dependency.
 #'
 #' The current algorithms is this:
+#'
 #' 1. If a dependency is linked to (i.e. its type is `LinkingTo`), this is
 #'    a build-time dependency, and we install it.
 #' 2. We try to evaluate the package code with only the `LinkingTo`
@@ -35,6 +36,7 @@
 #' E.g. for the example above, we test package `A` first. (Assuming there
 #' are no other direct dependencies depending on `A`, directly or
 #' indirectly.)
+#'
 #' * If `A` is a build dependency, then we always keep it installed in the
 #'   following package tests.
 #' * If `A` is not a build dependency, then we can remove it from the
