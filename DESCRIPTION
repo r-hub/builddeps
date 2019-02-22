@@ -25,5 +25,4 @@ Imports:
     utils
 Suggests: 
     testthat
-Remotes: r-pkgs/desc
 Encoding: UTF-8
